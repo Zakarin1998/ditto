@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trade Bot Control</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Trade Bot Controller</h1>
+      <p>Click "Start Bot" to initiate the bot, "Stop Bot" to terminate it, and "Fetch Trades" to manually log the latest trades.</p>
+    </header>
+    
+    <div class="controls">
+      <input type="text" id="trading-pair-input" placeholder="Enter trading pair (e.g., BTC_USD)">
+      <button id="start-btn">Start Bot</button>
+      <button id="stop-btn" disabled>Stop Bot</button>
+      <button id="fetch-trades-btn" disabled>Fetch Trades</button>
+      <button id="fetch-order-book-btn" disabled>Fetch Order book</button>
+      <button id="fetch-account-balance-btn">Fetch Account Balance</button>
+    </div>
+
+    <section id="log-container">
+      <h2>Bot Logs</h2>
+      <pre id="log-output"></pre>
+    </section>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

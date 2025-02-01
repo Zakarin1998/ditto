@@ -29,6 +29,14 @@ Ditto is a user-friendly tool that allows you to generate a multi-file Flask app
    cd ditto
    ```
 
+   ```bash
+      git rebase -i HEAD~10
+   ```
+
+   ```bash
+      git push -f
+   ```
+
 2. **Create a Virtual Environment (Optional but Recommended)**
 
    ```bash
