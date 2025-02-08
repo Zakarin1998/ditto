@@ -102,23 +102,69 @@ $(document).ready(function () {
     }
   });
 
-    // Fetch order book manually
-    $("#fetch-account-balance-btn").click(function () {
-      if (botRunning) {
-        $.ajax({
-          url: "/fetch_account_balance",
-          method: "POST",
-          success: function (response) {
-            appendLog(response.message);
-          },
-          error: function (xhr) {
-            appendLog("Error fetching order_book: " + xhr.responseJSON.message);
-          },
-        });
-      } else {
-        appendLog("Bot is not running. Start the bot first.");
+  // Start ping pong manually
+  $("#ping-btn").click(function () {
+    if (botRunning) {
+      let tradingPair = $("#trading-pair-input").val().trim(); // Get input value
+  
+      if (!tradingPair) {
+        appendLog("Please enter a valid trading pair.");
+        return;
       }
-    });
+
+      $.ajax({
+        url: "/ping",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ trading_pair: tradingPair }), // Send JSON payload
+        success: function (response) {
+          appendLog(response.message);
+        },
+        error: function (xhr) {
+          appendLog("Error fetching trades: " + xhr.responseJSON.message);
+        },
+      });
+    } else {
+      appendLog("Bot is not running. Start the bot first.");
+    }
+  });
+
+  // Fetch account balance manually
+  $("#fetch-account-balance-btn").click(function () {
+    if (botRunning) {
+      $.ajax({
+        url: "/fetch_account_balance",
+        method: "POST",
+        success: function (response) {
+          appendLog(response.message);
+        },
+        error: function (xhr) {
+          appendLog("Error fetching order_book: " + xhr.responseJSON.message);
+        },
+      });
+    } else {
+      appendLog("Bot is not running. Start the bot first.");
+    }
+  });
+
+  
+  // Fetch trading pairs
+  $("#fetch-trading-pairs-btn").click(function () {
+    if (botRunning) {
+      $.ajax({
+        url: "/fetch_trading_pairs",
+        method: "POST",
+        success: function (response) {
+          appendLog(response.message);
+        },
+        error: function (xhr) {
+          appendLog("Error fetching order_book: " + xhr.responseJSON.message);
+        },
+      });
+    } else {
+      appendLog("Bot is not running. Start the bot first.");
+    }
+  });
 
   // Fetch logs
   function fetchLogs() {

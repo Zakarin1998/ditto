@@ -13,7 +13,7 @@ class OrderBookData(BaseModel):
     bids: List[Tuple[float, float]]
     asks: List[Tuple[float, float]]
 
-class TradePair(BaseModel):
+class TradePairData(BaseModel):
     trade_pair: str
     base_currency: str
     quoted_currency: str
@@ -77,12 +77,17 @@ class OrderPayload(BaseModel):
     client_order_id: Optional[int] = None,
     quote_order_qty: Optional[float] = None
 
+class OrderId(BaseModel):
+    order_id: str
 
 class TradesApiResponse(ApiResponse):
     data: List[TradeData]
 
 class OrderApiResponse(ApiResponse):
-    order_id: str
+    data: OrderId
+
+class TradingPairsApiResponse(ApiResponse):
+    data: List[TradePairData]
 
 class OrderBookApiResponse(ApiResponse): 
     data: OrderBookData

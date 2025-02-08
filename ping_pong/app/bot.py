@@ -36,6 +36,22 @@ def fetch_trades(trading_pair):
     except Exception as e:
         append_log(f"Exception occurred: {str(e)}")
 
+def fetch_trading_pairs():
+    append_log("Fetching trading pairs...")
+    
+    try:
+        trading_pairs = moon_api.get_trade_pairs()
+        if trading_pairs.status == "OK":
+            for pair in trading_pairs.data:
+                append_log(f"Base currency: {pair.base_currency}")
+                append_log(f"Quoted currency: {pair.quoted_currency}")
+                append_log(f"Trade pair: {pair.trade_pair}")
+        else:
+            append_log(f"Error fetching trades: {trading_pairs.error}")
+
+    except Exception as e:
+        append_log(f"Exception occurred: {str(e)}")
+
 def fetch_account_balance():
     append_log("Fetching account balances...")
     try:
@@ -73,7 +89,7 @@ def price_rnd(mid_price):
 
 def get_mid_price():
 
-    orders = moon_api.get_order_book(TRADE_PAIR)
+    orders = moon_api.get_order_book_v2(TRADE_PAIR)
 
     bids = orders.get("bids", [])
     asks = orders.get("asks", [])
@@ -84,7 +100,7 @@ def get_mid_price():
         return (bid + ask) / 2
     return None
 
-def ping_pong_bot():
+def ping_pong_bot(trading_pair):
     append_log("Avvio del bot PING-PONG...")
     while True:
         try:
@@ -101,7 +117,7 @@ def ping_pong_bot():
             append_log(f"BUY - Size: {order_size}, Prezzo: {price_1} STARTED From Account 1: piazzo ordine di acquisto.")
             
             order_data = moon_api.create_order(
-                trade_pair=TRADE_PAIR, order_type="LIMIT", side="BUY",
+                trade_pair=trading_pair, order_type="LIMIT", side="BUY",
                 amount=order_size, time_in_force="GTC",  price=price_1,
                 # ttl="", # GTD orders only
                 # client_order_id = "",
@@ -115,7 +131,7 @@ def ping_pong_bot():
             append_log(f"SELL STARTED From Account 2: colpisco l'ordine di Account 1 vendendo.")
 
             account_2.create_order(
-                trade_pair=TRADE_PAIR, order_type="LIMIT", side="SELL",
+                trade_pair=trading_pair, order_type="LIMIT", side="SELL",
                 amount=order_size, time_in_force="GTC", price=price_1
             )
 
@@ -126,14 +142,14 @@ def ping_pong_bot():
             append_log(f"BUY - Size: {order_size}, Prezzo: {price_2} STARTED From Account 2: piazzo ordine di acquisto.")
             
             account_2.create_order(
-                trade_pair=TRADE_PAIR, order_type="LIMIT", side="BUY",
+                trade_pair=trading_pair, order_type="LIMIT", side="BUY",
                 amount=order_size, time_in_force="GTC", price=price_2
             )
             time.sleep(round(random.randint(111111,211111)/100000,2)) # Ritardo Casuale
 
             append_log(f"SELL STARTED From Account 1: colpisco l'ordine di Account 2 vendendo.")
             moon_api.create_order(
-                trade_pair=TRADE_PAIR, order_type="LIMIT", side="SELL",
+                trade_pair=trading_pair, order_type="LIMIT", side="SELL",
                 amount=order_size, time_in_force="GTC", price=price_2,
             )
             
@@ -146,6 +162,9 @@ def ping_pong_bot():
 def append_log(message):
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     log_messages.append(f"[{timestamp}] {message}")
+
+def pair(data):
+    return data.get("trading_pair", TRADE_PAIR)
 
 @bot_blueprint.route('/start', methods=['POST'])
 def start_bot():
@@ -172,9 +191,7 @@ def fetch_trades_endpoint():
     if not bot_running:
         return jsonify({"message": "Bot is not running. Start the bot first."}), 400
 
-    data = request.get_json()
-    trading_pair = data.get("trading_pair", TRADE_PAIR)
-    fetch_trades(trading_pair)
+    fetch_trades(pair(request.get_json()))
 
     return jsonify({"message": "Trades fetched and logged."}), 200
 
@@ -183,11 +200,29 @@ def fetch_order_book_endpoint():
     if not bot_running:
         return jsonify({"message": "Bot is not running. Start the bot first."}), 400
 
-    data = request.get_json()
-    trading_pair = data.get("trading_pair", TRADE_PAIR)
-    fetch_order_book(trading_pair)
+    fetch_order_book(pair(request.get_json()))
 
     return jsonify({"message": "Order book fetched and logged."}), 200
+
+@bot_blueprint.route('/fetch_trading_pairs', methods=['POST'])
+def fetch_trading_pairs_endpoint():
+    if not bot_running:
+        return jsonify({"message": "Bot is not running. Start the bot first."}), 400
+
+    fetch_trading_pairs()
+
+    return jsonify({"message": "Trading pairs and logged."}), 200
+
+
+@bot_blueprint.route('/ping', methods=['POST'])
+def ping_endpoint():
+    if not bot_running:
+        return jsonify({"message": "Bot is not running. Start the bot first."}), 400
+
+    ping_pong_bot(pair(request.get_json()))
+
+    return jsonify({"message": "Order book fetched and logged."}), 200
+
 
 @bot_blueprint.route('/fetch_account_balance', methods=['POST'])
 def fetch_account_balance_endpoint():

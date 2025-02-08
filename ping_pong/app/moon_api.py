@@ -1,7 +1,13 @@
 from typing import List
 import requests
 import time
-from app.entities import TradesApiResponse, OrderBookApiResponse, OrderPayload, OrderApiResponse, TradePair
+from app.entities import( 
+    TradesApiResponse,
+    OrderBookApiResponse,
+    OrderPayload,
+    OrderApiResponse,
+    TradingPairsApiResponse
+)
 
 class MoonApi:
     def __init__(self, base_url: str, access_key: str, secret_key: str, nonce=None):
@@ -69,7 +75,7 @@ class MoonApi:
     
     # --------------------- Public Endpoints ---------------------
 
-    def get_trade_pairs(self) -> List[TradePair]:
+    def get_trade_pairs(self) -> TradingPairsApiResponse:
         """
         Public endpoint: Retrieve public trade pairs (e.g., "BTC_USD").
         :return: List of TradePair JSON data response from GET /v1/public/get-trade-pairs
@@ -83,9 +89,7 @@ class MoonApi:
             params=params
         )
 
-        return [
-            TradePair(**trade_pair) for trade_pair in response
-        ]
+        return TradingPairsApiResponse(**response)
     
 
     def get_trades_v2(self, trade_pair: str) -> TradesApiResponse:
@@ -105,21 +109,6 @@ class MoonApi:
 
         return TradesApiResponse(**response)
     
-    def get_order_book(self, trade_pair):
-
-        """
-        Public endpoint: Retrieve order book asks and bids.
-        :param trade_pair: Trading pair string (e.g., "BTC_USD")
-        :return: Raw JSON data response from GET /v1/public/get-order-book
-        """
-
-        params = {"trade_pair": trade_pair}
-
-        return self._request(
-            "GET",
-            endpoint="/v1/public/get-order-book",
-            params=params
-        )
     
     def get_order_book_v2(self, trade_pair: str) -> OrderBookApiResponse:
         """
