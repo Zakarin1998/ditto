@@ -1,7 +1,8 @@
 from flask import Blueprint, jsonify, request
 import time
 import random
-from app.moon_api import MoonApi  
+from app.moon_api import MoonApi
+from app.utils import pair, price_rnd, random_range, random_int, simple_mid_price
 
 bot_blueprint = Blueprint('bot', __name__)
 bot_running = False
@@ -18,11 +19,6 @@ API_SECRET_2 = "your_api_secret_account_2"
 moon_api = MoonApi(TOTHMOON_API_BASE_URL, ACCESS_KEY, SECRET_KEY)
 account_2 = MoonApi(TOTHMOON_API_BASE_URL, API_KEY_2, API_SECRET_2)
 
-
-# Bot logic
-TRADE_PAIR = "BTC_USD"
-ORDER_SIZE_RANGE = (0.001, 0.005)
-ORDER_FREQUENCY_RANGE = (30, 120)
 
 def fetch_trades(trading_pair):
     append_log("Fetching latest trades...")
@@ -77,35 +73,24 @@ def fetch_order_book(trading_pair):
     except Exception as e:
         append_log(f"Exception occurred: {str(e)}")
 
-def get_order_id(order_data):
-    return order_data.get("order_id", "error")
-
 def random_wait(random_time):
     append_log(f"Aspetto {random_time} secondi prima del prossimo ciclo...")
     time.sleep(random_time)
 
-def price_rnd(mid_price):
-    return round(mid_price * random.uniform(0.999, 1.001), 2)
-
-def get_mid_price():
-
-    orders = moon_api.get_order_book_v2(TRADE_PAIR)
-
-    bids = orders.get("bids", [])
-    asks = orders.get("asks", [])
-    
-    if bids and asks:
-        bid = float(bids[0][0])
-        ask = float(asks[0][0])
-        return (bid + ask) / 2
-    return None
+def get_mid_price(trading_pair):
+    orders = moon_api.get_order_book_v2(trading_pair)
+    return simple_mid_price(
+        orders.data.bids, orders.data.asks
+    )
 
 def ping_pong_bot(trading_pair):
     append_log("Avvio del bot PING-PONG...")
+    ORDER_SIZE_RANGE = (0.001, 0.005)
+    ORDER_FREQUENCY_RANGE = (30, 120)
     while True:
         try:
-            order_size = round(random.uniform(*ORDER_SIZE_RANGE), 6)
-            mid_price = get_mid_price()
+            order_size = random_range(ORDER_SIZE_RANGE,6)
+            mid_price = get_mid_price(trading_pair)
 
             if mid_price is None:
                 append_log("Impossibile ottenere il prezzo medio, riprovo...")
@@ -123,19 +108,17 @@ def ping_pong_bot(trading_pair):
                 # client_order_id = "",
                 # quote_order_qty="" # "MARKET" orders only, if amount is not used
             )
+            
+            append_log(f"Order Id: {order_data}")
 
-            order_id = get_order_id(order_data)
-            append_log(f"Order Id: {order_id}")
-
-            random_wait(round(random.randint(111111,211111)/100000,2))
+            time.sleep(random_range(tpl_range=(1,2),precision=2)) # Ritardo Casuale
             append_log(f"SELL STARTED From Account 2: colpisco l'ordine di Account 1 vendendo.")
-
             account_2.create_order(
                 trade_pair=trading_pair, order_type="LIMIT", side="SELL",
                 amount=order_size, time_in_force="GTC", price=price_1
             )
 
-            random_wait(random.randint(*ORDER_FREQUENCY_RANGE))
+            random_wait(random_int(ORDER_FREQUENCY_RANGE))
 
             # PONG
             price_2 = price_rnd(mid_price)
@@ -145,8 +128,8 @@ def ping_pong_bot(trading_pair):
                 trade_pair=trading_pair, order_type="LIMIT", side="BUY",
                 amount=order_size, time_in_force="GTC", price=price_2
             )
-            time.sleep(round(random.randint(111111,211111)/100000,2)) # Ritardo Casuale
 
+            time.sleep(random_range(tpl_range=(1,2),precision=2)) # Ritardo Casuale
             append_log(f"SELL STARTED From Account 1: colpisco l'ordine di Account 2 vendendo.")
             moon_api.create_order(
                 trade_pair=trading_pair, order_type="LIMIT", side="SELL",
@@ -162,9 +145,6 @@ def ping_pong_bot(trading_pair):
 def append_log(message):
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     log_messages.append(f"[{timestamp}] {message}")
-
-def pair(data):
-    return data.get("trading_pair", TRADE_PAIR)
 
 @bot_blueprint.route('/start', methods=['POST'])
 def start_bot():
